@@ -491,7 +491,7 @@ async function fetchCSVFrom(url) {
 }
 
 async function fetchZohoCSV() {
-  if (!ZOHO_CSV_URL || ZOHO_CSV_URL.indexOf('PASTE_YOUR_ZOHO') === 0) {
+  if (!ZOHO_CSV_URL || ZOHO_CSV_URL.indexOf('https://sheet.zoho.com/sheet/published/t6tz3ee8c818f355646ac9ed9f072d98c5f0d') === 0) {
     setLiveStatus('● Set ZOHO_CSV_URL in the script to your published sheet link', true);
     return;
   }
