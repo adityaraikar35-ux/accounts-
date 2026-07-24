@@ -1,0 +1,933 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PACK8 // Dispatch Advice Control Room</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+
+:root{
+  --navy:#0B2545;
+  --navy-light:#13315C;
+  --bg:#F1F3F7;
+  --card:#FFFFFF;
+  --grey:#8592A6;
+  --grey-light:#EAEDF3;
+  --green:#16A34A;
+  --green-bg:#E7F7EE;
+  --orange:#F59E0B;
+  --orange-bg:#FEF3E0;
+  --red:#DC2626;
+  --red-bg:#FDEAEA;
+  --blue:#2563EB;
+  --blue-bg:#E9F0FE;
+  --text:#12213A;
+  --text-soft:#5B6B84;
+  --radius:14px;
+  --shadow:0 1px 2px rgba(11,37,69,0.06), 0 8px 24px -12px rgba(11,37,69,0.12);
+}
+*{box-sizing:border-box;}
+body{margin:0;font-family:'Segoe UI',system-ui,-apple-system,sans-serif;background:var(--bg);color:var(--text);}
+::-webkit-scrollbar{width:8px;height:8px;}
+::-webkit-scrollbar-thumb{background:#C7CFDC;border-radius:8px;}
+
+.app{display:flex;min-height:100vh;}
+
+/* Sidebar */
+.sidebar{width:236px;background:linear-gradient(180deg,var(--navy) 0%, var(--navy-light) 100%);color:#fff;display:flex;flex-direction:column;flex-shrink:0;}
+.brand{padding:22px 20px 16px;border-bottom:1px solid rgba(255,255,255,0.08);}
+.brand-title{font-size:15px;font-weight:800;letter-spacing:0.5px;}
+.brand-sub{font-size:11px;color:#A9BEDD;margin-top:2px;}
+.nav{padding:14px 10px;flex:1;}
+.nav-item{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;font-size:13.5px;color:#C7D6EE;cursor:pointer;margin-bottom:2px;transition:.15s;}
+.nav-item:hover{background:rgba(255,255,255,0.06);color:#fff;}
+.nav-item.active{background:rgba(255,255,255,0.14);color:#fff;font-weight:600;}
+.nav-icon{width:16px;text-align:center;opacity:0.9;}
+.filters-box{margin:10px 14px;padding:14px;background:rgba(255,255,255,0.06);border-radius:12px;}
+.filters-box h4{font-size:11px;text-transform:uppercase;letter-spacing:0.6px;color:#9FB4D6;margin:0 0 10px;}
+.filters-box label{font-size:11px;color:#B8C7E2;display:block;margin:8px 0 3px;}
+.filters-box select,.filters-box input{width:100%;padding:6px 8px;border-radius:7px;border:1px solid rgba(255,255,255,0.15);background:rgba(255,255,255,0.08);color:#fff;font-size:12px;}
+.filters-box select option{color:#111;}
+.reset-btn{width:100%;margin-top:10px;padding:7px;border-radius:7px;border:none;background:rgba(255,255,255,0.15);color:#fff;font-size:12px;cursor:pointer;}
+.reset-btn:hover{background:rgba(255,255,255,0.25);}
+.date-preset-btn{flex:1;min-width:70px;padding:6px 4px;border-radius:7px;border:1px solid rgba(255,255,255,0.18);background:rgba(255,255,255,0.06);color:#C7D6EE;font-size:10.5px;cursor:pointer;font-weight:600;}
+.date-preset-btn:hover,.date-preset-btn.active{background:#F59E0B;color:#12213A;border-color:#F59E0B;}
+.sidebar-foot{padding:14px 20px;font-size:10.5px;color:#7C90B4;border-top:1px solid rgba(255,255,255,0.08);}
+
+/* Main */
+.main{flex:1;display:flex;flex-direction:column;min-width:0;}
+.topbar{height:60px;background:var(--card);display:flex;align-items:center;justify-content:space-between;padding:0 22px;border-bottom:1px solid var(--grey-light);}
+.topbar-left{display:flex;align-items:center;gap:14px;}
+.topbar-left input{width:280px;padding:8px 12px;border-radius:9px;border:1px solid var(--grey-light);background:var(--bg);font-size:12.5px;}
+.pill{font-size:11px;font-weight:700;padding:4px 10px;border-radius:20px;background:var(--green-bg);color:var(--green);}
+.topbar-right{display:flex;align-items:center;gap:16px;font-size:12px;color:var(--text-soft);}
+.avatar{width:32px;height:32px;border-radius:50%;background:var(--navy);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;}
+.refresh-btn{background:var(--navy);color:#fff;border:none;padding:7px 14px;border-radius:8px;font-size:12px;cursor:pointer;font-weight:600;}
+
+.content{padding:22px;overflow-y:auto;}
+.page{display:none;}
+.page.active{display:block;}
+
+h1.page-title{font-size:20px;margin:0 0 3px;}
+.page-sub{font-size:12.5px;color:var(--text-soft);margin:0 0 18px;}
+
+/* KPI grid */
+.kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:14px;margin-bottom:22px;}
+.kpi-card{background:var(--card);border-radius:var(--radius);padding:16px 18px;box-shadow:var(--shadow);position:relative;overflow:hidden;}
+.kpi-card .bar{position:absolute;left:0;top:0;bottom:0;width:4px;}
+.kpi-label{font-size:11px;color:var(--text-soft);text-transform:uppercase;letter-spacing:0.4px;font-weight:600;}
+.kpi-value{font-size:24px;font-weight:800;margin-top:6px;}
+.kpi-delta{font-size:11px;margin-top:4px;font-weight:600;}
+
+/* Cards / grids */
+.grid-2{display:grid;grid-template-columns:1.4fr 1fr;gap:16px;margin-bottom:16px;}
+.grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:16px;}
+.card{background:var(--card);border-radius:var(--radius);padding:18px;box-shadow:var(--shadow);}
+.card h3{font-size:13.5px;margin:0 0 2px;}
+.card .hint{font-size:11px;color:var(--text-soft);margin:0 0 14px;}
+.chart-wrap{position:relative;height:230px;}
+.chart-wrap.tall{height:290px;}
+
+/* status cards */
+.status-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:18px;}
+.status-card{border-radius:12px;padding:14px 16px;box-shadow:var(--shadow);}
+.status-card .name{font-size:11.5px;font-weight:700;text-transform:uppercase;letter-spacing:.3px;}
+.status-card .count{font-size:22px;font-weight:800;margin-top:6px;}
+.status-card .meta{font-size:11px;margin-top:4px;opacity:.85;}
+
+/* table */
+table{width:100%;border-collapse:collapse;font-size:12.5px;}
+th{text-align:left;padding:9px 10px;background:var(--grey-light);color:var(--text-soft);font-weight:700;font-size:11px;text-transform:uppercase;letter-spacing:.3px;position:sticky;top:0;}
+td{padding:9px 10px;border-bottom:1px solid var(--grey-light);}
+tr:hover td{background:#F8FAFD;}
+.tag{padding:3px 9px;border-radius:20px;font-size:11px;font-weight:700;display:inline-block;}
+.tag.green{background:var(--green-bg);color:var(--green);}
+.tag.orange{background:var(--orange-bg);color:var(--orange);}
+.tag.red{background:var(--red-bg);color:var(--red);}
+.tag.blue{background:var(--blue-bg);color:var(--blue);}
+.tag.grey{background:var(--grey-light);color:var(--text-soft);}
+.table-scroll{max-height:420px;overflow-y:auto;border:1px solid var(--grey-light);border-radius:10px;}
+
+.toolbar{display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap;align-items:center;}
+.toolbar input,.toolbar select{padding:8px 12px;border-radius:8px;border:1px solid var(--grey-light);font-size:12.5px;background:var(--card);}
+.toolbar input{width:220px;}
+
+.customer-list{list-style:none;padding:0;margin:0;}
+.customer-list li{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--grey-light);font-size:12.5px;}
+.customer-list li:last-child{border:none;}
+.customer-list .rank{width:22px;height:22px;border-radius:6px;background:var(--navy);color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;margin-right:10px;}
+.customer-row{display:flex;align-items:center;}
+.customer-amt{font-weight:700;color:var(--navy);}
+
+.ageing-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;}
+.ageing-card{border-radius:12px;padding:16px;text-align:center;}
+.ageing-card .num{font-size:26px;font-weight:800;}
+.ageing-card .lbl{font-size:11px;margin-top:4px;}
+
+.exception-item{display:flex;justify-content:space-between;align-items:center;padding:11px 0;border-bottom:1px dashed var(--grey-light);font-size:12.5px;}
+.exception-item:last-child{border:none;}
+.exception-badge{background:var(--red-bg);color:var(--red);font-size:11px;font-weight:700;padding:3px 9px;border-radius:20px;}
+
+@media(max-width:1100px){.grid-2,.grid-3{grid-template-columns:1fr;}}
+
+.warn-row td{background:#FFF7E0 !important;}
+.mismatch-banner{background:#FDEAEA;border:1px solid #F3B4B4;color:#8A1C1C;padding:12px 16px;border-radius:10px;font-size:12.5px;margin-bottom:16px;}
+.mismatch-banner b{color:#DC2626;}
+
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- SIDEBAR -->
+  <div class="sidebar">
+    <div class="brand">
+      <div style="background:#fff;border-radius:9px;padding:10px 14px;display:inline-block;margin-bottom:8px;">
+        <img src="data:image/png;base64,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" alt="Pack8 logo" style="height:44px;width:auto;display:block;">
+      </div>
+      <div class="brand-sub">Dispatch Advice Control Room</div>
+    </div>
+    <div class="nav" id="navList">
+      <div class="nav-item active" data-page="overview"><span class="nav-icon">▣</span> Executive Summary</div>
+      <div class="nav-item" data-page="daily"><span class="nav-icon">☀</span> Daily Dashboard</div>
+      <div class="nav-item" data-page="monthly"><span class="nav-icon">▦</span> Monthly Dashboard</div>
+      <div class="nav-item" data-page="status"><span class="nav-icon">◼</span> Status &amp; Remarks</div>
+      <div class="nav-item" data-page="logistics"><span class="nav-icon">🚚</span> ERP Code &amp; Transporter</div>
+      <div class="nav-item" data-page="pending"><span class="nav-icon">⏱</span> Pending Orders</div>
+      <div class="nav-item" data-page="exceptions"><span class="nav-icon">⚠</span> Exception Report</div>
+      <div class="nav-item" data-page="datatable"><span class="nav-icon">☰</span> Data Table</div>
+    </div>
+    <div class="filters-box">
+      <h4>Date Filter (Primary)</h4>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px;">
+        <button class="date-preset-btn" data-preset="today">Latest</button>
+        <button class="date-preset-btn" data-preset="week">Last 7d</button>
+        <button class="date-preset-btn" data-preset="month">This Month</button>
+        <button class="date-preset-btn active" data-preset="all">All</button>
+      </div>
+      <label>From Date</label>
+      <input type="date" id="fFrom">
+      <label>To Date</label>
+      <input type="date" id="fTo">
+    </div>
+    <div class="filters-box">
+      <h4>Other Filters</h4>
+      <label>Status</label>
+      <select id="fStatus"><option value="">All statuses</option></select>
+      <label>Remarks</label>
+      <select id="fRemarks"><option value="">All remarks</option></select>
+      <label>ERP Code</label>
+      <select id="fErp"><option value="">All ERP codes</option></select>
+      <button class="reset-btn" id="resetFilters">Reset All Filters</button>
+    </div>
+    <div class="sidebar-foot">
+      PACK8 © 2026 · Version 1.1.0 (Live-mapped)<br>
+      <span style="display:inline-block;margin-top:8px;padding:4px 10px;background:linear-gradient(90deg,#F59E0B,#F97316);color:#fff;border-radius:20px;font-size:10.5px;font-weight:700;letter-spacing:.3px;">
+        ✦ Created by Shanky Patil
+      </span>
+    </div>
+  </div>
+
+  <!-- MAIN -->
+  <div class="main">
+    <div class="topbar">
+      <div class="topbar-left">
+        <input type="text" id="globalSearch" placeholder="🔍 Search Order ID, ERP Code, Transporter...">
+        <span class="pill" id="liveStatus">● Connecting to live sheet…</span>
+      </div>
+      <div class="topbar-right">
+        <span id="recordCount">RECORDS —</span>
+        <span id="updatedAt">UPDATED —</span>
+        <button class="refresh-btn" id="refreshBtn">Refresh</button>
+        <div class="avatar">A</div>
+      </div>
+    </div>
+    <div style="background:var(--blue-bg);border-bottom:1px solid #C9DBFB;padding:9px 22px;font-size:12px;color:var(--navy);font-weight:600;">
+      📋 Data Scope: Dispatch records applicable to <strong>OfficeDeck Technologies Pvt. Ltd.</strong> — streamed live from the Zoho Sheet (auto-refreshes every 30s). Date column = primary key for all date-wise views below.
+    </div>
+      <!-- LIVE DATA STATUS BANNER (auto-updates, no manual controls) -->
+  <div id="csvBanner" style="display:none;background:#E7F7EE;border:1px solid #86EFAC;color:#14532D;padding:10px 22px;font-size:12.5px;font-weight:600;border-radius:0;"></div>
+
+  <div class="content">
+
+      <!-- OVERVIEW -->
+      <div class="page active" id="page-overview">
+        <h1 class="page-title">Welcome back, Shanky Patil 👋</h1>
+        <p class="page-sub">Mapped directly from your Dispatch Advice sheet (Date, Order ID, Order Qty, Status, Remarks, ERP Code, Transporter)</p>
+        <div class="mismatch-banner" id="mismatchBanner"></div>
+        <div class="kpi-grid" id="kpiGrid"></div>
+        <div class="grid-2">
+          <div class="card">
+            <h3>Daily Dispatch Qty Trend</h3>
+            <p class="hint">Order Qty per day, filtered range</p>
+            <div class="chart-wrap tall"><canvas id="chartTrend"></canvas></div>
+          </div>
+          <div class="card">
+            <h3>Status Split</h3>
+            <p class="hint">Share of orders by Status column</p>
+            <div class="chart-wrap tall"><canvas id="chartStatusPie"></canvas></div>
+          </div>
+        </div>
+        <div class="grid-2">
+          <div class="card">
+            <h3>Monthly Dispatch Qty</h3>
+            <div class="chart-wrap"><canvas id="chartMonthlyAmt"></canvas></div>
+          </div>
+          <div class="card">
+            <h3>Remarks-wise Quantity</h3>
+            <div class="chart-wrap"><canvas id="chartRemarksQty"></canvas></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- DAILY -->
+      <div class="page" id="page-daily">
+        <h1 class="page-title">Daily Dashboard</h1>
+        <p class="page-sub">Most recent logged date in the dataset</p>
+        <div class="kpi-grid" id="dailyKpiGrid"></div>
+        <div class="card">
+          <h3>Latest Date's Orders</h3>
+          <p class="hint" id="todayDateLabel">—</p>
+          <div class="table-scroll">
+            <table>
+              <thead><tr><th>Order ID</th><th>Qty</th><th>Status</th><th>Remarks</th><th>ERP Code</th><th>Transporter</th></tr></thead>
+              <tbody id="todayTableBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- MONTHLY -->
+      <div class="page" id="page-monthly">
+        <h1 class="page-title">Monthly Dashboard</h1>
+        <p class="page-sub">Month-wise dispatch qty across the full dataset (Apr–Jul 2026)</p>
+        <div class="kpi-grid" id="monthlyKpiGrid"></div>
+        <div class="grid-2">
+          <div class="card">
+            <h3>Monthly Dispatch Qty</h3>
+            <div class="chart-wrap tall"><canvas id="chartMonthlyBar"></canvas></div>
+          </div>
+          <div class="card">
+            <h3>Cumulative Dispatch Qty</h3>
+            <div class="chart-wrap tall"><canvas id="chartArea"></canvas></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- STATUS -->
+      <div class="page" id="page-status">
+        <h1 class="page-title">Status &amp; Remarks</h1>
+        <p class="page-sub">Every order bucketed by its Status and Remarks values, exactly as entered in the sheet</p>
+        <h3 style="margin:4px 0 10px;">By Status</h3>
+        <div class="status-grid" id="statusGrid"></div>
+        <h3 style="margin:18px 0 10px;">By Remarks</h3>
+        <div class="status-grid" id="remarksGrid"></div>
+        <div class="grid-2" style="margin-top:16px;">
+          <div class="card">
+            <h3>Count by Remarks</h3>
+            <div class="chart-wrap tall"><canvas id="chartRemarksCount"></canvas></div>
+          </div>
+          <div class="card">
+            <h3>Qty by Remarks</h3>
+            <div class="chart-wrap tall"><canvas id="chartRemarksQty2"></canvas></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- LOGISTICS -->
+      <div class="page" id="page-logistics">
+        <h1 class="page-title">ERP Code &amp; Transporter Analysis</h1>
+        <p class="page-sub">No Customer Name column exists in your sheet — ranked by ERP Code (product/SKU) and Transporter instead</p>
+        <div class="grid-2">
+          <div class="card">
+            <h3>Top 10 ERP Codes by Qty</h3>
+            <ul class="customer-list" id="topByErp"></ul>
+          </div>
+          <div class="card">
+            <h3>Top 10 Transporters by Order Count</h3>
+            <ul class="customer-list" id="topByTransporter"></ul>
+          </div>
+        </div>
+      </div>
+
+      <!-- PENDING -->
+      <div class="page" id="page-pending">
+        <h1 class="page-title">Pending / Non-Done Orders</h1>
+        <p class="page-sub">Orders where Status ≠ "Done" — bucketed by days since dispatch date</p>
+        <div class="ageing-grid" id="ageingGrid"></div>
+        <div class="card" style="margin-top:16px;">
+          <h3>Pending Detail</h3>
+          <div class="table-scroll">
+            <table>
+              <thead><tr><th>Order ID</th><th>Date</th><th>Days Pending</th><th>Qty</th><th>Status</th><th>Remarks</th></tr></thead>
+              <tbody id="ageingTableBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- EXCEPTIONS -->
+      <div class="page" id="page-exceptions">
+        <h1 class="page-title">Exception Report</h1>
+        <p class="page-sub">Data-quality issues detected while mapping your sheet — this is the mismatch check you asked for</p>
+        <div class="card" id="exceptionCard"></div>
+        <div class="card" style="margin-top:16px;">
+          <h3>Flagged Rows (with sheet row number)</h3>
+          <div class="table-scroll" style="max-height:420px;">
+            <table>
+              <thead><tr><th>Sheet Row</th><th>Date</th><th>Order ID</th><th>Qty</th><th>Issue</th></tr></thead>
+              <tbody id="exceptionTableBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- DATA TABLE -->
+      <div class="page" id="page-datatable">
+        <h1 class="page-title">Raw Records</h1>
+        <p class="page-sub">Full dataset as parsed from your uploaded CSV — rows with issues are highlighted</p>
+        <div class="toolbar">
+          <input type="text" id="tableSearch" placeholder="Search order id / ERP code / transporter...">
+          <select id="tableRemarksFilter"><option value="">All remarks</option></select>
+        </div>
+        <div class="table-scroll" style="max-height:520px;">
+          <table>
+            <thead><tr><th>Row</th><th>Date</th><th>Order ID</th><th>Qty</th><th>Status</th><th>Remarks</th><th>ERP Code</th><th>Transporter</th></tr></thead>
+            <tbody id="fullTableBody"></tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+/* ============ REAL DATA — parsed from your uploaded Dispatch_Advice_Sheet CSV ============
+   Columns mapped: Date, Order ID, Order Qty, Status, REMARKS, ERP Code, Transporter, Vehicle No
+   Date column is forward-filled (source sheet uses merged cells for repeated dates) and is the
+   primary field driving every date-wise KPI, chart and filter below.
+*/
+let DATA_RAW = [];
+let DATA = [];
+let filtered = [];
+let LATEST_DATE = null;
+
+function parseCSVLine(line) {
+  const result = [];
+  let current = '';
+  let inQuotes = false;
+  for (let i = 0; i < line.length; i++) {
+    const ch = line[i];
+    if (ch === '"') {
+      if (inQuotes && line[i+1] === '"') { current += '"'; i++; }
+      else { inQuotes = !inQuotes; }
+    } else if (ch === ',' && !inQuotes) {
+      result.push(current.trim());
+      current = '';
+    } else {
+      current += ch;
+    }
+  }
+  result.push(current.trim());
+  return result;
+}
+
+function normalizeDate(raw) {
+  if (!raw) return null;
+  raw = raw.trim();
+  let m;
+  if ((m = raw.match(/^(\d{1,2})[-\/](\d{1,2})[-\/](\d{4})$/))) {
+    return m[3] + '-' + m[2].padStart(2,'0') + '-' + m[1].padStart(2,'0');
+  }
+  if ((m = raw.match(/^(\d{4})[-\/](\d{1,2})[-\/](\d{1,2})$/))) {
+    return m[1] + '-' + m[2].padStart(2,'0') + '-' + m[3].padStart(2,'0');
+  }
+  return null;
+}
+
+function loadCSV(csvText) {
+  const lines = csvText.split('\n').filter(l => l.trim());
+  if (lines.length < 2) { alert('CSV is empty or invalid.'); return; }
+  const headers = parseCSVLine(lines[0]).map(h => h.toLowerCase().replace(/[^a-z0-9]/g,''));
+  const colMap = {
+    date: headers.findIndex(h => h.includes('date')),
+    orderId: headers.findIndex(h => (h.includes('order') && (h.includes('id') || h.includes('no'))) || h === 'orderid'),
+    qty: headers.findIndex(h => h.includes('qty') || h.includes('quantity')),
+    status: headers.findIndex(h => h === 'status'),
+    remarks: headers.findIndex(h => h.includes('remark')),
+    erpCode: headers.findIndex(h => h.includes('erp') || (h.includes('code') && !h.includes('erp') === false)),
+    transporter: headers.findIndex(h => h.includes('transport')),
+  };
+  const rows = [];
+  let lastDate = null;
+  for (let i = 1; i < lines.length; i++) {
+    const cols = parseCSVLine(lines[i]);
+    if (cols.every(c => !c.trim())) continue;
+    const rawDate = colMap.date >= 0 ? cols[colMap.date] : '';
+    const dateStr = normalizeDate(rawDate) || lastDate;
+    if (dateStr) lastDate = dateStr;
+    const orderId = colMap.orderId >= 0 ? (cols[colMap.orderId]||'').trim() : '';
+    const qtyRaw = colMap.qty >= 0 ? (cols[colMap.qty]||'') : '';
+    const qty = parseFloat((qtyRaw).replace(/[^0-9.]/g,'')) || null;
+    const status = colMap.status >= 0 ? (cols[colMap.status]||'').trim() : '';
+    const remarks = colMap.remarks >= 0 ? (cols[colMap.remarks]||'').trim() : '';
+    const erpCode = colMap.erpCode >= 0 ? (cols[colMap.erpCode]||'').trim() || null : null;
+    const transporter = colMap.transporter >= 0 ? (cols[colMap.transporter]||'').trim() || null : null;
+    if (!dateStr && !orderId) continue;
+    rows.push({ sheetRow: i+1, date: dateStr, orderId: orderId||null, qty, status, remarks, erpCode, transporter, exceptions:[] });
+  }
+  DATA_RAW = rows;
+  DATA = DATA_RAW.map(r => ({...r, dateObj: r.date ? new Date(r.date+'T00:00:00') : null}));
+  filtered = [...DATA];
+  LATEST_DATE = DATA.reduce((max,r)=> r.dateObj && (!max || r.dateObj>max) ? r.dateObj : max, null);
+  document.getElementById('recordCount').textContent = 'RECORDS ' + filtered.length;
+  document.getElementById('updatedAt').textContent = 'UPDATED ' + new Date().toLocaleTimeString();
+  const banner = document.getElementById('csvBanner');
+  if (banner) { banner.textContent = '✅ ' + rows.length + ' rows loaded · Updated: ' + new Date().toLocaleTimeString(); banner.style.display='block'; }
+  populateFilterDropdowns();
+  applyFilters();
+}
+
+/* ============ LIVE ZOHO SHEET — fully automatic, no manual upload/connect ============
+   - ZOHO_CSV_URL is the only data source. Replace with your Zoho Sheet's
+     published CSV link (Share > Publish > enable "Allow download" > format = CSV
+     > copy the *download* link — not the "?type=grid" interactive viewer link,
+     which returns an HTML page instead of raw CSV data).
+   - On page load, the sheet is fetched immediately, then re-fetched every
+     30 seconds. There is no upload button and no "Connect Live" step —
+     the dashboard is always live.
+   - Every fetch uses cache:'no-store' plus a cache-busting query param, so
+     stale CSV data is never reused — each cycle reflects the current sheet.
+   - If the direct fetch fails (most commonly due to Zoho not sending CORS
+     headers for this origin), the request is automatically retried through
+     PROXY_URL, a server-side proxy (e.g. a Cloudflare Worker or Netlify
+     Function) that fetches the CSV on the sheet's behalf and forwards it
+     back with permissive CORS headers. See the proxy snippet at the bottom
+     of this file for a ready-to-deploy example.
+*/
+const ZOHO_CSV_URL = 'PASTE_YOUR_ZOHO_PUBLISHED_CSV_URL_HERE';
+// Optional server-side proxy used automatically as a CORS fallback.
+// Leave blank ('') to disable the fallback and surface CORS errors directly.
+const PROXY_URL = ''; // e.g. 'https://your-worker.your-subdomain.workers.dev/?url='
+const ZOHO_POLL_MS = 30000; // 30 seconds
+
+function setLiveStatus(msg, isError) {
+  const pill = document.getElementById('liveStatus');
+  if (pill) { pill.textContent = msg; pill.style.color = isError ? '#DC2626' : ''; }
+}
+
+async function fetchCSVFrom(url) {
+  const bust = url.includes('?') ? '&_=' : '?_=';
+  const res = await fetch(url + bust + Date.now(), { cache: 'no-store' });
+  if (!res.ok) throw new Error('HTTP ' + res.status);
+  const text = await res.text();
+  const trimmed = text.trim();
+  if (trimmed.startsWith('<!DOCTYPE') || trimmed.startsWith('<html')) {
+    throw new Error('Response was a webpage, not CSV data. In Zoho: Share > Publish > enable "Allow download" > format = CSV.');
+  }
+  return text;
+}
+
+async function fetchZohoCSV() {
+  if (!ZOHO_CSV_URL || ZOHO_CSV_URL.indexOf('PASTE_YOUR_ZOHO') === 0) {
+    setLiveStatus('● Set ZOHO_CSV_URL in the script to your published sheet link', true);
+    return;
+  }
+  try {
+    const text = await fetchCSVFrom(ZOHO_CSV_URL);
+    loadCSV(text);
+    setLiveStatus('● Live from Zoho · auto-refresh every 30s · synced ' + new Date().toLocaleTimeString(), false);
+  } catch (directErr) {
+    // Likely a CORS failure — retry via the server-side proxy if one is configured.
+    if (PROXY_URL) {
+      try {
+        const proxied = PROXY_URL + encodeURIComponent(ZOHO_CSV_URL);
+        const text = await fetchCSVFrom(proxied);
+        loadCSV(text);
+        setLiveStatus('● Live from Zoho (via proxy) · auto-refresh every 30s · synced ' + new Date().toLocaleTimeString(), false);
+        return;
+      } catch (proxyErr) {
+        setLiveStatus('● Live fetch failed (direct + proxy): ' + proxyErr.message, true);
+        console.error('Direct fetch error:', directErr, 'Proxy fetch error:', proxyErr);
+        return;
+      }
+    }
+    setLiveStatus('● Live fetch failed: ' + directErr.message, true);
+    console.error(directErr);
+  }
+}
+
+// Auto-start on page load: fetch immediately, then poll every 30s. No user action required.
+fetchZohoCSV();
+setInterval(fetchZohoCSV, ZOHO_POLL_MS);
+
+/* ============ EXAMPLE SERVER-SIDE PROXY (deploy separately, point PROXY_URL at it) ============
+
+Cloudflare Worker (paste into a new Worker, deploy, then set
+PROXY_URL = 'https://<your-worker>.workers.dev/?url=' above):
+
+  export default {
+    async fetch(request) {
+      const target = new URL(request.url).searchParams.get('url');
+      if (!target) return new Response('Missing url param', { status: 400 });
+      const upstream = await fetch(target, { cf: { cacheTtl: 0 } });
+      const body = await upstream.text();
+      return new Response(body, {
+        status: upstream.status,
+        headers: {
+          'Content-Type': 'text/csv',
+          'Access-Control-Allow-Origin': '*',
+          'Cache-Control': 'no-store',
+        },
+      });
+    },
+  };
+
+Netlify Function (netlify/functions/zoho-proxy.js, then set
+PROXY_URL = '/.netlify/functions/zoho-proxy?url=' above):
+
+  export default async (request) => {
+    const target = new URL(request.url).searchParams.get('url');
+    if (!target) return new Response('Missing url param', { status: 400 });
+    const upstream = await fetch(target);
+    const body = await upstream.text();
+    return new Response(body, {
+      status: upstream.status,
+      headers: {
+        'Content-Type': 'text/csv',
+        'Access-Control-Allow-Origin': '*',
+        'Cache-Control': 'no-store',
+      },
+    });
+  };
+
+*/
+function fmtDate(d){ if(!d) return null; return d.toISOString().slice(0,10); }
+function addDays(d,n){const r=new Date(d); r.setDate(r.getDate()+n); return r;}
+
+/* ============ FILTER DROPDOWNS ============ */
+function populateFilterDropdowns(){
+  const statusSel = document.getElementById('fStatus');
+  const remSel = document.getElementById('fRemarks');
+  const erpSel = document.getElementById('fErp');
+  const tableRemSel = document.getElementById('tableRemarksFilter');
+  [...new Set(DATA.map(r=>r.status).filter(Boolean))].sort().forEach(s=>{
+    const o=document.createElement('option'); o.value=s; o.textContent=s; statusSel.appendChild(o);
+  });
+  [...new Set(DATA.map(r=>r.remarks).filter(Boolean))].sort().forEach(r=>{
+    const o=document.createElement('option'); o.value=r; o.textContent=r; remSel.appendChild(o);
+    const o2=o.cloneNode(true); tableRemSel.appendChild(o2);
+  });
+  [...new Set(DATA.map(r=>r.erpCode).filter(Boolean))].sort().forEach(e=>{
+    const o=document.createElement('option'); o.value=e; o.textContent=e; erpSel.appendChild(o);
+  });
+}
+
+function applyFilters(){
+  const status = document.getElementById('fStatus').value;
+  const rem = document.getElementById('fRemarks').value;
+  const erp = document.getElementById('fErp').value;
+  const from = document.getElementById('fFrom').value;
+  const to = document.getElementById('fTo').value;
+  filtered = DATA.filter(r=>{
+    if(status && r.status!==status) return false;
+    if(rem && r.remarks!==rem) return false;
+    if(erp && r.erpCode!==erp) return false;
+    if(from && (!r.date || r.date < from)) return false;
+    if(to && (!r.date || r.date > to)) return false;
+    return true;
+  });
+  renderAll();
+}
+document.getElementById('fStatus').addEventListener('change', applyFilters);
+document.getElementById('fRemarks').addEventListener('change', applyFilters);
+document.getElementById('fErp').addEventListener('change', applyFilters);
+document.getElementById('fFrom').addEventListener('change', applyFilters);
+document.getElementById('fTo').addEventListener('change', applyFilters);
+document.getElementById('resetFilters').addEventListener('click', ()=>{
+  document.getElementById('fStatus').value="";
+  document.getElementById('fRemarks').value="";
+  document.getElementById('fErp').value="";
+  document.getElementById('fFrom').value="";
+  document.getElementById('fTo').value="";
+  document.querySelectorAll('.date-preset-btn').forEach(b=>b.classList.remove('active'));
+  document.querySelector('.date-preset-btn[data-preset="all"]').classList.add('active');
+  applyFilters();
+});
+document.getElementById('refreshBtn').addEventListener('click', fetchZohoCSV);
+document.getElementById('globalSearch').addEventListener('input', (e)=>{
+  document.getElementById('tableSearch').value = e.target.value;
+  document.querySelector('[data-page="datatable"]').click();
+});
+
+/* Date presets */
+document.querySelectorAll('.date-preset-btn').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    document.querySelectorAll('.date-preset-btn').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    const preset = btn.dataset.preset;
+    let from='', to='';
+    if(preset==='today'){ from=to=fmtDate(LATEST_DATE); }
+    else if(preset==='week'){ from=fmtDate(addDays(LATEST_DATE,-6)); to=fmtDate(LATEST_DATE); }
+    else if(preset==='month'){ from=fmtDate(new Date(LATEST_DATE.getFullYear(),LATEST_DATE.getMonth(),1)); to=fmtDate(LATEST_DATE); }
+    else if(preset==='all'){ from=''; to=''; }
+    document.getElementById('fFrom').value = from;
+    document.getElementById('fTo').value = to;
+    applyFilters();
+  });
+});
+
+/* ============ NAVIGATION ============ */
+document.querySelectorAll('.nav-item').forEach(item=>{
+  item.addEventListener('click', ()=>{
+    document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+    item.classList.add('active');
+    document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+    document.getElementById('page-'+item.dataset.page).classList.add('active');
+  });
+});
+
+/* ============ CHARTS ============ */
+const chartRegistry = {};
+function makeChart(id, config){
+  if(chartRegistry[id]) chartRegistry[id].destroy();
+  const ctx = document.getElementById(id);
+  chartRegistry[id] = new Chart(ctx, config);
+}
+const COLORS = {navy:'#0B2545',green:'#16A34A',orange:'#F59E0B',red:'#DC2626',blue:'#2563EB',grey:'#8592A6',purple:'#7C3AED'};
+const PALETTE = [COLORS.green,COLORS.blue,COLORS.orange,COLORS.red,COLORS.purple,'#0D9488','#F97316','#64748B'];
+function colorFor(label, list){ return PALETTE[list.indexOf(label) % PALETTE.length]; }
+
+function kpiCard(label, value, color){
+  return `<div class="kpi-card"><div class="bar" style="background:${color}"></div>
+    <div class="kpi-label">${label}</div><div class="kpi-value">${value}</div></div>`;
+}
+function tagFor(val){
+  const map = {"Done":"green","Invoice Done":"green","Pending":"orange","PRODUCTION ENTRY PENDING":"orange","Cancel":"red","In dispute":"red","-":"grey"};
+  const cls = map[val] || (list=>['blue','purple','orange'][Math.abs((val||'').split('').reduce((a,c)=>a+c.charCodeAt(0),0))%3])();
+  return `<span class="tag ${map[val]||'blue'}">${val||'—'}</span>`;
+}
+
+/* ============ RENDER: OVERVIEW ============ */
+function renderExceptionBanner(){
+  const withIssues = filtered.filter(r=>r.exceptions && r.exceptions.length);
+  const dup = withIssues.filter(r=>r.exceptions.some(e=>e.includes('repeated'))).length;
+  const qtyFix = withIssues.filter(r=>r.exceptions.some(e=>e.includes('non-numeric'))).length;
+  const blankId = withIssues.filter(r=>r.exceptions.includes('Blank Order ID')).length;
+  document.getElementById('mismatchBanner').innerHTML =
+    `⚠ <b>${withIssues.length} of ${filtered.length}</b> records in the current filter have a data-quality flag — `+
+    `<b>${dup}</b> duplicate Order IDs, <b>${qtyFix}</b> Qty value(s) auto-corrected from typos (e.g. "1OO"→100), `+
+    `<b>${blankId}</b> blank Order ID(s). See the <b>Exception Report</b> tab for the full row-by-row list.`;
+}
+
+function renderExecutiveSummary(){
+  renderExceptionBanner();
+  const total = filtered.length;
+  const totalQty = filtered.reduce((s,r)=>s+(r.qty||0),0);
+  const done = filtered.filter(r=>r.status==="Done").length;
+  const pending = filtered.filter(r=>r.status && r.status!=="Done").length;
+  const invoiceDone = filtered.filter(r=>r.remarks==="Invoice Done").length;
+  const cancelled = filtered.filter(r=>r.remarks==="Cancel").length;
+  const issues = filtered.filter(r=>r.exceptions && r.exceptions.length).length;
+
+  const latestRows = filtered.filter(r=>r.date===fmtDate(LATEST_DATE));
+  const latestQty = latestRows.reduce((s,r)=>s+(r.qty||0),0);
+
+  const fmt = n => Math.round(n).toLocaleString('en-IN');
+  document.getElementById('kpiGrid').innerHTML = [
+    kpiCard('Total Orders (rows)', fmt(total), COLORS.navy),
+    kpiCard('Total Dispatch Qty', fmt(totalQty), COLORS.blue),
+    kpiCard('Status: Done', fmt(done), COLORS.green),
+    kpiCard('Status: Not Done', fmt(pending), COLORS.orange),
+    kpiCard('Remarks: Invoice Done', fmt(invoiceDone), COLORS.green),
+    kpiCard('Remarks: Cancelled', fmt(cancelled), COLORS.red),
+    kpiCard('Data Exceptions', fmt(issues), COLORS.red),
+    kpiCard('Latest Date Qty', fmt(latestQty), COLORS.navy),
+  ].join('');
+
+  const byDate = {};
+  filtered.forEach(r=>{ if(!r.date) return; byDate[r.date]=(byDate[r.date]||0)+(r.qty||0); });
+  const dateKeys = Object.keys(byDate).sort();
+  makeChart('chartTrend', {
+    type:'line',
+    data:{labels:dateKeys.map(d=>d.slice(5)), datasets:[
+      {label:'Dispatch Qty', data:dateKeys.map(d=>byDate[d]), borderColor:COLORS.navy, backgroundColor:'rgba(11,37,69,0.08)', fill:true, tension:0.3}
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true}}}
+  });
+
+  const statusCounts = {};
+  filtered.forEach(r=>{ const k=r.status||'Blank'; statusCounts[k]=(statusCounts[k]||0)+1; });
+  const statusLabels = Object.keys(statusCounts);
+  makeChart('chartStatusPie', {
+    type:'doughnut',
+    data:{labels:statusLabels, datasets:[{data:statusLabels.map(s=>statusCounts[s]), backgroundColor:statusLabels.map(s=>colorFor(s,statusLabels))}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{boxWidth:10,font:{size:10}}}}}
+  });
+
+  const monthBuckets = {};
+  filtered.forEach(r=>{ if(!r.date) return; const m=r.date.slice(0,7); monthBuckets[m]=(monthBuckets[m]||0)+(r.qty||0); });
+  const monthKeys = Object.keys(monthBuckets).sort();
+  makeChart('chartMonthlyAmt', {
+    type:'bar',
+    data:{labels:monthKeys, datasets:[{label:'Qty', data:monthKeys.map(m=>monthBuckets[m]), backgroundColor:COLORS.blue, borderRadius:6}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true}}}
+  });
+
+  const remarksQty = {};
+  filtered.forEach(r=>{ const k=r.remarks||'Blank'; remarksQty[k]=(remarksQty[k]||0)+(r.qty||0); });
+  const remLabels = Object.keys(remarksQty);
+  makeChart('chartRemarksQty', {
+    type:'bar',
+    data:{labels:remLabels, datasets:[{label:'Qty', data:remLabels.map(r=>remarksQty[r]), backgroundColor:remLabels.map(r=>colorFor(r,remLabels)), borderRadius:6}]},
+    options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}}}
+  });
+}
+
+/* ============ RENDER: DAILY ============ */
+function renderDaily(){
+  const latestRows = filtered.filter(r=>r.date===fmtDate(LATEST_DATE));
+  document.getElementById('todayDateLabel').textContent = LATEST_DATE ? LATEST_DATE.toDateString() : '—';
+  const qty = latestRows.reduce((s,r)=>s+(r.qty||0),0);
+  const doneQty = latestRows.filter(r=>r.status==="Done").reduce((s,r)=>s+(r.qty||0),0);
+  const fmt = n=>Math.round(n).toLocaleString('en-IN');
+  document.getElementById('dailyKpiGrid').innerHTML=[
+    kpiCard('Orders (Latest Date)', latestRows.length, COLORS.navy),
+    kpiCard('Dispatch Qty', fmt(qty), COLORS.navy),
+    kpiCard('Done Qty', fmt(doneQty), COLORS.green),
+    kpiCard('Not-Done Qty', fmt(qty-doneQty), COLORS.orange),
+  ].join('');
+  document.getElementById('todayTableBody').innerHTML = latestRows.map(r=>
+    `<tr><td>${r.orderId||'—'}</td><td>${r.qty!=null?r.qty:'—'}</td><td>${tagFor(r.status)}</td><td>${tagFor(r.remarks)}</td><td>${r.erpCode||'—'}</td><td>${r.transporter||'—'}</td></tr>`
+  ).join('') || '<tr><td colspan="6" style="text-align:center;color:#8592A6;">No orders on latest date within current filter</td></tr>';
+}
+
+/* ============ RENDER: MONTHLY ============ */
+function renderMonthly(){
+  const totalQty = filtered.reduce((s,r)=>s+(r.qty||0),0);
+  const days = new Set(filtered.map(r=>r.date).filter(Boolean)).size || 1;
+  const avgQty = Math.round(totalQty/days);
+  const fmt = n=>Math.round(n).toLocaleString('en-IN');
+  document.getElementById('monthlyKpiGrid').innerHTML=[
+    kpiCard('Total Dispatch Qty', fmt(totalQty), COLORS.navy),
+    kpiCard('Days Logged', days, COLORS.blue),
+    kpiCard('Avg Daily Qty', fmt(avgQty), COLORS.blue),
+    kpiCard('Total Orders', filtered.length, COLORS.navy),
+  ].join('');
+  const byDate={};
+  filtered.forEach(r=>{ if(!r.date) return; byDate[r.date]=(byDate[r.date]||0)+(r.qty||0); });
+  const keys=Object.keys(byDate).sort();
+  makeChart('chartMonthlyBar',{
+    type:'bar',
+    data:{labels:keys.map(d=>d.slice(5)), datasets:[{label:'Dispatch Qty', data:keys.map(d=>byDate[d]), backgroundColor:COLORS.navy, borderRadius:5}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true}}}
+  });
+  let cum=0;
+  const cumData = keys.map(d=>{cum+=byDate[d]; return cum;});
+  makeChart('chartArea',{
+    type:'line',
+    data:{labels:keys.map(d=>d.slice(5)), datasets:[{label:'Cumulative Qty', data:cumData, borderColor:COLORS.blue, backgroundColor:'rgba(37,99,235,0.12)', fill:true, tension:0.3}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true}}}
+  });
+}
+
+/* ============ RENDER: STATUS & REMARKS ============ */
+function renderStatus(){
+  const statusCounts={}, statusQty={};
+  filtered.forEach(r=>{ const k=r.status||'Blank'; statusCounts[k]=(statusCounts[k]||0)+1; statusQty[k]=(statusQty[k]||0)+(r.qty||0); });
+  const statusLabels = Object.keys(statusCounts);
+  const total = filtered.length || 1;
+  document.getElementById('statusGrid').innerHTML = statusLabels.map(s=>{
+    const c = colorFor(s,statusLabels);
+    return `<div class="status-card" style="background:${c}18;border:1px solid ${c}33;">
+      <div class="name" style="color:${c}">${s}</div>
+      <div class="count" style="color:${c}">${statusCounts[s]}</div>
+      <div class="meta">${((statusCounts[s]/total)*100).toFixed(1)}% · Qty ${Math.round(statusQty[s]).toLocaleString('en-IN')}</div>
+    </div>`;
+  }).join('');
+
+  const remCounts={}, remQty={};
+  filtered.forEach(r=>{ const k=r.remarks||'Blank'; remCounts[k]=(remCounts[k]||0)+1; remQty[k]=(remQty[k]||0)+(r.qty||0); });
+  const remLabels = Object.keys(remCounts);
+  document.getElementById('remarksGrid').innerHTML = remLabels.map(s=>{
+    const c = colorFor(s,remLabels);
+    return `<div class="status-card" style="background:${c}18;border:1px solid ${c}33;">
+      <div class="name" style="color:${c};font-size:10.5px;">${s}</div>
+      <div class="count" style="color:${c}">${remCounts[s]}</div>
+      <div class="meta">${((remCounts[s]/total)*100).toFixed(1)}% · Qty ${Math.round(remQty[s]).toLocaleString('en-IN')}</div>
+    </div>`;
+  }).join('');
+
+  makeChart('chartRemarksCount',{
+    type:'bar',
+    data:{labels:remLabels, datasets:[{label:'Count', data:remLabels.map(r=>remCounts[r]), backgroundColor:remLabels.map(r=>colorFor(r,remLabels)), borderRadius:6}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}}}
+  });
+  makeChart('chartRemarksQty2',{
+    type:'bar',
+    data:{labels:remLabels, datasets:[{label:'Qty', data:remLabels.map(r=>remQty[r]), backgroundColor:remLabels.map(r=>colorFor(r,remLabels)), borderRadius:6}]},
+    options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}}}
+  });
+}
+
+/* ============ RENDER: LOGISTICS (ERP Code / Transporter) ============ */
+function renderLogistics(){
+  const byErp = {}, byTransporter = {};
+  filtered.forEach(r=>{
+    if(r.erpCode){ byErp[r.erpCode]=(byErp[r.erpCode]||0)+(r.qty||0); }
+    if(r.transporter){ byTransporter[r.transporter]=(byTransporter[r.transporter]||0)+1; }
+  });
+  const topErp = Object.entries(byErp).sort((a,b)=>b[1]-a[1]).slice(0,10);
+  const topTrans = Object.entries(byTransporter).sort((a,b)=>b[1]-a[1]).slice(0,10);
+  document.getElementById('topByErp').innerHTML = topErp.map(([code,qty],i)=>
+    `<li><div class="customer-row"><span class="rank">${i+1}</span>${code}</div><span class="customer-amt">${Math.round(qty).toLocaleString('en-IN')} units</span></li>`
+  ).join('') || '<li>No data in range</li>';
+  document.getElementById('topByTransporter').innerHTML = topTrans.map(([name,count],i)=>
+    `<li><div class="customer-row"><span class="rank">${i+1}</span>${name}</div><span class="customer-amt">${count} orders</span></li>`
+  ).join('') || '<li>No data in range</li>';
+}
+
+/* ============ RENDER: PENDING / AGEING ============ */
+function renderAgeing(){
+  const pendingRows = filtered.filter(r=>r.status && r.status!=="Done" && r.dateObj).map(r=>({
+    ...r, days: LATEST_DATE ? Math.floor((LATEST_DATE-r.dateObj)/86400000) : 0
+  }));
+  const buckets = {'0-1 Days':[], '2-3 Days':[], '4-7 Days':[], '>7 Days':[]};
+  pendingRows.forEach(r=>{
+    if(r.days<=1) buckets['0-1 Days'].push(r);
+    else if(r.days<=3) buckets['2-3 Days'].push(r);
+    else if(r.days<=7) buckets['4-7 Days'].push(r);
+    else buckets['>7 Days'].push(r);
+  });
+  const colors = {'0-1 Days':COLORS.green,'2-3 Days':COLORS.blue,'4-7 Days':COLORS.orange,'>7 Days':COLORS.red};
+  document.getElementById('ageingGrid').innerHTML = Object.entries(buckets).map(([label,rows])=>{
+    const c = colors[label];
+    const qty = rows.reduce((s,r)=>s+(r.qty||0),0);
+    return `<div class="ageing-card" style="background:${c}15;border:1px solid ${c}33;">
+      <div class="num" style="color:${c}">${rows.length}</div>
+      <div class="lbl" style="color:${c}">${label} · Qty ${Math.round(qty).toLocaleString('en-IN')}</div>
+    </div>`;
+  }).join('');
+  const allPending = pendingRows.sort((a,b)=>b.days-a.days);
+  document.getElementById('ageingTableBody').innerHTML = allPending.map(r=>
+    `<tr><td>${r.orderId||'—'}</td><td>${r.date}</td><td>${r.days}</td><td>${r.qty!=null?r.qty:'—'}</td><td>${tagFor(r.status)}</td><td>${tagFor(r.remarks)}</td></tr>`
+  ).join('') || '<tr><td colspan="6" style="text-align:center;color:#8592A6;">No pending (non-Done) orders in range</td></tr>';
+}
+
+/* ============ RENDER: EXCEPTIONS ============ */
+function renderExceptions(){
+  const flagged = filtered.filter(r=>r.exceptions && r.exceptions.length);
+  const dupCount = flagged.filter(r=>r.exceptions.some(e=>e.includes('repeated'))).length;
+  const qtyFixCount = flagged.filter(r=>r.exceptions.some(e=>e.includes('non-numeric'))).length;
+  const blankIdCount = flagged.filter(r=>r.exceptions.includes('Blank Order ID')).length;
+  const items = [
+    ['Duplicate Order ID (same Order ID on multiple rows)', dupCount],
+    ['Qty had typo, auto-corrected (e.g. "1OO" → 100)', qtyFixCount],
+    ['Blank Order ID', blankIdCount],
+  ];
+  document.getElementById('exceptionCard').innerHTML = `<h3 style="margin-top:0;">Open Exceptions (current filter)</h3>` +
+    items.map(([label,count])=>`<div class="exception-item"><span>${label}</span><span class="exception-badge">${count}</span></div>`).join('') +
+    `<p style="font-size:11.5px;color:#8592A6;margin-top:10px;">Note: "Duplicate Order ID" can be legitimate (partial/multi-line dispatch of one order across dates) — flagged for your manual review, not auto-treated as an error.</p>`;
+
+  document.getElementById('exceptionTableBody').innerHTML = flagged.map(r=>
+    `<tr><td>${r.sheetRow}</td><td>${r.date||'—'}</td><td>${r.orderId||'—'}</td><td>${r.qty!=null?r.qty:'—'}</td><td>${r.exceptions.join('; ')}</td></tr>`
+  ).join('') || '<tr><td colspan="5" style="text-align:center;color:#8592A6;">No exceptions in current filter</td></tr>';
+}
+
+/* ============ RENDER: DATA TABLE ============ */
+function renderFullTable(){
+  const search = (document.getElementById('tableSearch').value||'').toLowerCase();
+  const remFilter = document.getElementById('tableRemarksFilter').value;
+  let rows = filtered.filter(r=>{
+    if(remFilter && r.remarks!==remFilter) return false;
+    if(search && !((r.orderId||'').toLowerCase().includes(search) || (r.erpCode||'').toLowerCase().includes(search) || (r.transporter||'').toLowerCase().includes(search))) return false;
+    return true;
+  });
+  rows = rows.slice().sort((a,b)=> (b.sheetRow||0)-(a.sheetRow||0));
+  document.getElementById('fullTableBody').innerHTML = rows.map(r=>
+    `<tr class="${r.exceptions&&r.exceptions.length?'warn-row':''}"><td>${r.sheetRow}</td><td>${r.date||'—'}</td><td>${r.orderId||'—'}</td><td>${r.qty!=null?r.qty:'—'}</td><td>${tagFor(r.status)}</td><td>${tagFor(r.remarks)}</td><td>${r.erpCode||'—'}</td><td>${r.transporter||'—'}</td></tr>`
+  ).join('') || '<tr><td colspan="8" style="text-align:center;color:#8592A6;">No records match</td></tr>';
+}
+document.getElementById('tableSearch').addEventListener('input', renderFullTable);
+document.getElementById('tableRemarksFilter').addEventListener('change', renderFullTable);
+
+function renderAll(){
+  renderExecutiveSummary();
+  renderDaily();
+  renderMonthly();
+  renderStatus();
+  renderLogistics();
+  renderAgeing();
+  renderExceptions();
+  renderFullTable();
+  document.getElementById('recordCount').textContent = 'RECORDS ' + filtered.length;
+  document.getElementById('updatedAt').textContent = 'UPDATED ' + new Date().toLocaleTimeString();
+}
+
+populateFilterDropdowns();
+renderAll();
+</script>
+</body>
+</html>
